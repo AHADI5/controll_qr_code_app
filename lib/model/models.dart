@@ -21,6 +21,19 @@ class Student  {
     };
 
   }
+
+  Student.syncStudentList() {
+    /*
+  * this function fetches the student list from
+  * GET http://localhost:8080/api/v1/students
+  * and then saves it to the local data base
+  *
+  *  */
+
+
+
+
+  }
 }
 
 class VerificationAmount {
