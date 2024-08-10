@@ -28,6 +28,12 @@ class VerificationAmount {
   late double amount;
 
   VerificationAmount({required this.amount}) ;
+  factory VerificationAmount.fromJson(Map<String, dynamic> json) {
+    return VerificationAmount(
+        amount: json["amount"],
+
+    );
+  }
 
 
 }

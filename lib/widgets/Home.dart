@@ -20,7 +20,7 @@ class _HomeState extends State<Home> {
   void _handleScanResult(String? result) {
     if (result != null) {
       // Display the result in a popup dialog
-      showDialog(
+      /*showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
@@ -36,7 +36,8 @@ class _HomeState extends State<Home> {
             ],
           );
         },
-      );
+      );*/
+
 
       // Stop scanning and update the state
       setState(() {

@@ -1,5 +1,6 @@
 
 import 'dart:developer';
+import 'dart:ffi';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:v1/model/models.dart';
@@ -58,6 +59,38 @@ class DatabaseService {
         [student.name, student.payedAmount,  student.studentID]);
     log('updated $data');
   }
+
+  //select a student by id
+  Future<Student?> getStudentByID(int studentID) async {
+    final db = await _databaseService.database;
+
+    // Execute the query to find the student by ID
+    var data = await db.rawQuery(
+      'SELECT * FROM Student WHERE mat = ?',
+      [studentID],
+    );
+
+    // Check if any data is returned
+    if (data.isNotEmpty) {
+      // Convert the first result into a Student object
+      return Student.fromJson(data.first);
+    } else {
+      // Return null if no student was found
+      return null;
+    }
+  }
+
+  Future<double> getAmount() async {
+    final db = await _databaseService.database;
+
+    // Execute the query to get the amount to verify
+    var data = await db.rawQuery(
+      'SELECT amount FROM VerificationAmount '
+    );
+    return VerificationAmount.fromJson(data.first).amount;
+
+  }
+
 
 
 
