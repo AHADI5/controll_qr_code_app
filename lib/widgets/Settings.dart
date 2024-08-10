@@ -52,7 +52,12 @@ class Settings {
                         print('Saved: $enteredText');
                         //TODO SAVE THE AMOUNT IN THE LOCAL DB
                         Navigator.of(context).pop(); // Close the dialog
+
                       },
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(Colors.blueAccent),
+                        foregroundColor: MaterialStateProperty.all(Colors.white),
+                      ),
                       child: Text('Enregistrer'),
                     ),
                   ],
