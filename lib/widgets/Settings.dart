@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:v1/services/services.dart';
 
 class Settings {
   // Function to show the popup dialog
@@ -26,7 +27,7 @@ class Settings {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 16.0),
+                const SizedBox(height: 16.0),
                 TextField(
                   controller: _textController,
                   decoration: const InputDecoration(
@@ -34,7 +35,7 @@ class Settings {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                SizedBox(height: 16.0),
+                const SizedBox(height: 16.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: <Widget>[
@@ -46,11 +47,14 @@ class Settings {
                     ),
                     SizedBox(width: 8.0),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Handle the save action
                         String enteredText = _textController.text;
                         print('Saved: $enteredText');
                         //TODO SAVE THE AMOUNT IN THE LOCAL DB
+                        final databaseService = DatabaseService();
+                        await databaseService.setAmount(double.parse(enteredText));
+
                         Navigator.of(context).pop(); // Close the dialog
 
                       },
@@ -58,7 +62,7 @@ class Settings {
                         backgroundColor: MaterialStateProperty.all(Colors.blueAccent),
                         foregroundColor: MaterialStateProperty.all(Colors.white),
                       ),
-                      child: Text('Enregistrer'),
+                      child: const Text('Enregistrer'),
                     ),
                   ],
                 ),

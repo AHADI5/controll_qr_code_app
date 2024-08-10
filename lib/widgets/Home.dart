@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:v1/widgets/Settings.dart';
 import 'package:v1/widgets/qr_code_scanner.dart'; // Ensure this path is correct
+import 'package:v1/services/synchronisation.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -12,6 +13,8 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   bool _isScanning = false; // State to determine if the scanner is visible
+  bool _isSynchronizing = false; // State to manage synchronization progress
+  String _syncStatusMessage = ''; // Message to show synchronization status
 
   // Function to handle the scan result and display it in a popup dialog
   void _handleScanResult(String? result) {
@@ -42,6 +45,32 @@ class _HomeState extends State<Home> {
     }
   }
 
+  // Function to start synchronization
+  Future<void> _startSynchronization() async {
+    setState(() {
+      _isSynchronizing = true; // Show progress indicator
+      _syncStatusMessage = 'Synchronizing...'; // Set status message
+    });
+
+    try {
+      SyncService syncService = SyncService();
+      await syncService.synchronizeWithServer('http://10.0.2.2:8080/api/v1/students/');
+
+      // Update the state after synchronization is complete
+      setState(() {
+        _isSynchronizing = false;
+        _syncStatusMessage = 'Synchronized'; // Update status message
+      });
+    } catch (e) {
+      // Handle any errors that occur during synchronization
+      setState(() {
+        _isSynchronizing = false;
+        _syncStatusMessage = 'Synchronization failed'; // Error message
+      });
+      print('Error during synchronization: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +86,7 @@ class _HomeState extends State<Home> {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: const [
                     BoxShadow(
-                      color: Colors.black26,
+                      color: Colors.black12,
                       spreadRadius: 3,
                       blurRadius: 3,
                       offset: Offset(0, 2),
@@ -84,7 +113,7 @@ class _HomeState extends State<Home> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      // Add functionality for refresh button if needed
+                      _startSynchronization(); // Start synchronization process
                     },
                     icon: const Icon(Icons.refresh, color: Colors.lightBlue),
                   ),
@@ -109,6 +138,12 @@ class _HomeState extends State<Home> {
                   ),
                 ],
               ),
+              if (_isSynchronizing) ...[
+                const SizedBox(height: 30),
+                const CircularProgressIndicator(), // Show progress indicator
+                const SizedBox(height: 10),
+                Text(_syncStatusMessage), // Show synchronization status
+              ],
               const SizedBox(height: 80),
               const Text("ulpgl 2024"),
               const SizedBox(height: 20),
