@@ -25,21 +25,20 @@ class DatabaseService {
   }
 
   void _onCreate(Database db, int version) async {
-    // Create the Student table
     await db.execute(
       'CREATE TABLE Student(mat INT PRIMARY KEY, name TEXT, payed_amount DOUBLE)',
     );
-
-    // Create the VerificationAmount table
+    // Create the VerificationAmount table with an id as the primary key
     await db.execute(
-      'CREATE TABLE VerificationAmount(amount DOUBLE)',
+      'CREATE TABLE IF NOT EXISTS VerificationAmount('
+          'id INTEGER PRIMARY KEY AUTOINCREMENT, ' // Primary key
+          'amount DOUBLE)',
     );
+
+
 
     log('TABLES CREATED');
   }
-
-
-
 
   // Retrieve all students stored locally
   Future<List<Student>> getStudents() async {
@@ -73,9 +72,11 @@ class DatabaseService {
     // Check if any data is returned
     if (data.isNotEmpty) {
       // Convert the first result into a Student object
+      print("the student found is ${Student.fromJson(data.first).name}");
       return Student.fromJson(data.first);
     } else {
       // Return null if no student was found
+      print("no student found with matricule $studentID");
       return null;
     }
   }
@@ -85,12 +86,17 @@ class DatabaseService {
 
     // Execute the query to get the amount to verify
     var data = await db.rawQuery(
-      'SELECT amount FROM VerificationAmount '
+      'SELECT amount FROM VerificationAmount WHERE id = ?',
+      [1], // Assuming you are still using the first row (id = 1)
     );
-    return VerificationAmount.fromJson(data.first).amount;
 
+    if (data.isNotEmpty) {
+      print("the actual amount is   ${VerificationAmount.fromJson(data.first).amount}");
+      return VerificationAmount.fromJson(data.first).amount;
+    } else {
+      throw Exception('No amount found');
+    }
   }
-
 
 
 
@@ -118,30 +124,37 @@ class DatabaseService {
     }
   }
 
-  // Insert or update amount
+  // this method insert a new amount , or update it if it already exists
+
   Future<void> setAmount(double amount) async {
     final db = await _databaseService.database;
 
-    // Check if an amount already exists
-    final count = Sqflite.firstIntValue(
-        await db.rawQuery('SELECT COUNT(*) FROM VerificationAmount'));
+    //get the actual value
+    var data = await db.rawQuery(
+      'SELECT amount FROM VerificationAmount WHERE id = ?',
+      [1], // Assuming you are still using the first row (id = 1)
+    );
 
-    if (count! > 0) {
-      // Update the existing amount
+    if (data.isNotEmpty) {
       await db.update(
         'VerificationAmount',
         {'amount': amount},
-        where: 'rowid = ?',
-        whereArgs: [1], // Assume there's only one row
+        where: 'id = ?', // Use the id field
+        whereArgs: [1], // Assuming there's only one row
       );
+      print("amount exists and has been  updated") ;
     } else {
-      // Insert a new amount
       await db.insert(
         'VerificationAmount',
         {'amount': amount},
       );
+      print("no amount found , new one has been inserted ") ;
     }
   }
+
+
+
+
 
 
 }

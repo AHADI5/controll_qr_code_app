@@ -6,16 +6,17 @@ class Verification {
 
    Future<bool> checkStudent(int studentID) async {
      /**
-      * this function takes the studentID in parameter , and return wether he is in order or not
-      * we first retrieve the student
-      * get his amount already payed ,
-      * get the verification amount
-      * and then check
-      * the return type is a boolean
-      * and will be used to design , result pages
-      *
-      * */
+      * This function takes the studentID as a parameter and returns whether the student is in order or not.
+      * The process is as follows:
+      * 1. Retrieve the student by ID.
+      * 2. Get the amount the student has already paid.
+      * 3. Get the verification amount required.
+      * 4. Check if the paid amount matches the verification amount.
+      * The return type is a boolean and will be used to design the result pages.
+      */
      try {
+       // Retrieve the student by ID from the database
+
        final Student? student = await _databaseService.getStudentByID(studentID);
        if (student == null) {
          // Handle the case where the student is not found
@@ -23,14 +24,18 @@ class Verification {
          return false;
        }
 
-       final double amount = await _databaseService.getAmount();
-       return student.payedAmount == amount;
+       // Get the required verification amount from the database
+       final double verificationAmount = await _databaseService.getAmount();
+
+       // Check if the student's paid amount matches the required verification amount
+       return student.payedAmount >= verificationAmount;
      } catch (e) {
-       // Handle the error by logging it and returning false
-       print("Error retrieving student: $e");
+       // Handle any errors by logging them and returning false
+       print("Error retrieving student or amount: $e");
        return false;
      }
    }
+
 
 
 

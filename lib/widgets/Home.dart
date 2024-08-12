@@ -3,6 +3,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:v1/widgets/Settings.dart';
 import 'package:v1/widgets/qr_code_scanner.dart'; // Ensure this path is correct
 import 'package:v1/services/synchronisation.dart';
+import 'package:v1/widgets/Result.dart';
+
+import 'Verification.dart'; // Import the Verification service
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -15,34 +18,35 @@ class _HomeState extends State<Home> {
   bool _isScanning = false; // State to determine if the scanner is visible
   bool _isSynchronizing = false; // State to manage synchronization progress
   String _syncStatusMessage = ''; // Message to show synchronization status
+  bool _isVerifying = false; // State to manage verification progress
 
-  // Function to handle the scan result and display it in a popup dialog
-  void _handleScanResult(String? result) {
+  // Function to handle the scan result and display it in a new page
+  void _handleScanResult(String? result) async {
     if (result != null) {
-      // Display the result in a popup dialog
-      /*showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Scan Result"),
-            content: Text("Scanned QR code: $result"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                },
-                child: const Text("OK"),
-              ),
-            ],
-          );
-        },
-      );*/
+      print("the result is  .... $result") ;
 
 
-      // Stop scanning and update the state
-      setState(() {
-        _isScanning = false;
-      });
+
+      try {
+        // Assuming the result is the student ID
+        final int studentID = int.parse(result); // Convert scanned result to studentID
+        final Verification verification = Verification();
+        final bool isInOrder = await verification.checkStudent(studentID);
+
+        // Navigate to the result page
+        Navigator.of(context).pushNamed(
+          "/verificationResult",
+          arguments: isInOrder,
+        );
+      } catch (e) {
+        // Handle errors, e.g., invalid studentID format
+        print('Error during verification: $e');
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const VerificationResultPage(isInOrder: false),
+          ),
+        );
+      }
     }
   }
 
@@ -81,6 +85,11 @@ class _HomeState extends State<Home> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const SizedBox(height: 80),
+              if (_isVerifying) ...[
+                const Text('Verification in progress...'), // Loader message
+                const CircularProgressIndicator(),
+                const SizedBox(height: 20),
+              ],
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white10,
