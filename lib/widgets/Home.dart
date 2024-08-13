@@ -1,11 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart' as mobile_scanner;
+import 'package:qr_code_scanner/qr_code_scanner.dart' as qr_code_scanner;
 import 'package:v1/widgets/Settings.dart';
-import 'package:v1/widgets/qr_code_scanner.dart'; // Ensure this path is correct
 import 'package:v1/services/synchronisation.dart';
 import 'package:v1/widgets/Result.dart';
-
-import 'Verification.dart'; // Import the Verification service
+import 'Verification.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -15,62 +15,48 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  bool _isScanning = false; // State to determine if the scanner is visible
-  bool _isSynchronizing = false; // State to manage synchronization progress
-  String _syncStatusMessage = ''; // Message to show synchronization status
-  bool _isVerifying = false; // State to manage verification progress
+  bool _isSynchronizing = false;
+  String _syncStatusMessage = '';
+  bool _isScanning = false;
+  qr_code_scanner.QRViewController? controller;
+  mobile_scanner.Barcode? result;
 
-  // Function to handle the scan result and display it in a new page
-  void _handleScanResult(String? result) async {
-    if (result != null) {
-      print("the result is  .... $result") ;
+  final GlobalKey qrkey = GlobalKey(debugLabel: "QR");
 
-
-
-      try {
-        // Assuming the result is the student ID
-        final int studentID = int.parse(result); // Convert scanned result to studentID
-        final Verification verification = Verification();
-        final bool isInOrder = await verification.checkStudent(studentID);
-
-        // Navigate to the result page
-        Navigator.of(context).pushNamed(
-          "/verificationResult",
-          arguments: isInOrder,
-        );
-      } catch (e) {
-        // Handle errors, e.g., invalid studentID format
-        print('Error during verification: $e');
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const VerificationResultPage(isInOrder: false),
-          ),
-        );
-      }
+  @override
+  void reassemble() {
+    if (Platform.isAndroid) {
+      controller?.pauseCamera();
     }
+    controller?.resumeCamera();
+    super.reassemble();
   }
 
-  // Function to start synchronization
+  @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
+  }
+
   Future<void> _startSynchronization() async {
     setState(() {
-      _isSynchronizing = true; // Show progress indicator
-      _syncStatusMessage = 'Synchronizing...'; // Set status message
+      _isSynchronizing = true;
+      _syncStatusMessage = 'Synchronizing...';
     });
 
     try {
       SyncService syncService = SyncService();
-      await syncService.synchronizeWithServer('http://10.0.2.2:8080/api/v1/students/');
+      await syncService
+          .synchronizeWithServer('http://192.168.43.178:8080/api/v1/students/');
 
-      // Update the state after synchronization is complete
       setState(() {
         _isSynchronizing = false;
-        _syncStatusMessage = 'Synchronized'; // Update status message
+        _syncStatusMessage = 'Synchronized';
       });
     } catch (e) {
-      // Handle any errors that occur during synchronization
       setState(() {
         _isSynchronizing = false;
-        _syncStatusMessage = 'Synchronization failed'; // Error message
+        _syncStatusMessage = 'Synchronization failed';
       });
       print('Error during synchronization: $e');
     }
@@ -85,11 +71,6 @@ class _HomeState extends State<Home> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const SizedBox(height: 80),
-              if (_isVerifying) ...[
-                const Text('Verification in progress...'), // Loader message
-                const CircularProgressIndicator(),
-                const SizedBox(height: 20),
-              ],
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white10,
@@ -106,16 +87,14 @@ class _HomeState extends State<Home> {
                 margin: const EdgeInsets.all(15),
                 width: MediaQuery.of(context).size.width * 0.9,
                 height: MediaQuery.of(context).size.height * 0.5,
-                child: _isScanning
-                    ? QrCodeScanner(
-                  setResult: _handleScanResult, // Pass the result handling function
+                child:
+                     qr_code_scanner.QRView(
+                  onPermissionSet: (ctrl, p) =>
+                      _onPermissionSet(context, ctrl, p),
+                  key: qrkey,
+                  onQRViewCreated: _onQRViewCreated,
                 )
-                    : const Center(
-                  child: Text(
-                    "Scanner QR code",
-                    style: TextStyle(fontSize: 20, color: Colors.black54),
-                  ),
-                ),
+
               ),
               const SizedBox(height: 30),
               Row(
@@ -123,25 +102,25 @@ class _HomeState extends State<Home> {
                 children: [
                   IconButton(
                     onPressed: () {
-                      _startSynchronization(); // Start synchronization process
+                      _startSynchronization();
                     },
                     icon: const Icon(Icons.refresh, color: Colors.lightBlue),
                   ),
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _isScanning = !_isScanning; // Toggle scanner visibility
+                        _isScanning = !_isScanning;
                       });
                     },
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.blueAccent),
+                      backgroundColor:
+                      MaterialStateProperty.all(Colors.blueAccent),
                       foregroundColor: MaterialStateProperty.all(Colors.white),
                     ),
                     child: Text(_isScanning ? "Stop Scan" : "Scan"),
                   ),
                   IconButton(
                     onPressed: () {
-                      // Show the settings popup
                       Settings.showPopup(context);
                     },
                     icon: const Icon(Icons.settings),
@@ -150,15 +129,52 @@ class _HomeState extends State<Home> {
               ),
               if (_isSynchronizing) ...[
                 const SizedBox(height: 30),
-                const CircularProgressIndicator(), // Show progress indicator
+                const CircularProgressIndicator(),
                 const SizedBox(height: 10),
-                Text(_syncStatusMessage), // Show synchronization status
+                Text(_syncStatusMessage),
               ],
               const SizedBox(height: 80),
               const Text("ulpgl 2024"),
               const SizedBox(height: 20),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _onQRViewCreated(qr_code_scanner.QRViewController controller) {
+    setState(() {
+      this.controller = controller;
+    });
+    controller.scannedDataStream.listen((scanData) {
+      if (scanData.format == qr_code_scanner.BarcodeFormat.qrcode &&
+          scanData.code != null && scanData.code!.isNotEmpty) {
+        controller.pauseCamera();
+        navigateToNextScreen(scanData.code!);
+      }
+    });
+  }
+
+  void _onPermissionSet(
+      BuildContext context, qr_code_scanner.QRViewController ctrl, bool p) {
+    if (!p) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No Permission')),
+      );
+    }
+  }
+
+  Future<void> navigateToNextScreen(String qrData) async {
+    final int studentID =
+    int.parse(qrData); // Convert scanned result to studentID
+    final Verification verification = Verification();
+    final bool isInOrder = await verification.checkStudent(studentID);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VerificationResultPage(
+          isInOrder: isInOrder,
         ),
       ),
     );
