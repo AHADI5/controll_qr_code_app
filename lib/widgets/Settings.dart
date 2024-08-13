@@ -1,19 +1,20 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:v1/services/services.dart';
+
+import '../services/services.dart';
 
 class Settings {
   // Function to show the popup dialog
-  static void showPopup(BuildContext context) {
-    // Define a text controller to manage the text field input
+  static Future<void> showPopup(
+      BuildContext context, Function(double) onAmountSaved) async {
     TextEditingController _textController = TextEditingController();
 
-    // Show the dialog
-    showDialog(
+    await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0), // Customize border radius here
+            borderRadius: BorderRadius.circular(12.0),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -34,6 +35,7 @@ class Settings {
                     hintText: 'Montant en dollar',
                     border: OutlineInputBorder(),
                   ),
+                  keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16.0),
                 Row(
@@ -41,26 +43,27 @@ class Settings {
                   children: <Widget>[
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop(); // Close the dialog
+                        Navigator.of(context).pop();
                       },
-                      child: Text('Annuler'),
+                      child: const Text('Annuler'),
                     ),
-                    SizedBox(width: 8.0),
+                    const SizedBox(width: 8.0),
                     ElevatedButton(
                       onPressed: () async {
-                        // Handle the save action
                         String enteredText = _textController.text;
-                        print('Saved: $enteredText');
-                        //TODO SAVE THE AMOUNT IN THE LOCAL DB
                         final databaseService = DatabaseService();
-                        await databaseService.setAmount(double.parse(enteredText));
+                        double newAmount = double.parse(enteredText);
+                        await databaseService.setAmount(newAmount);
 
-                        Navigator.of(context).pop(); // Close the dialog
+                        onAmountSaved(newAmount);
 
+                        Navigator.of(context).pop();
                       },
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(Colors.blueAccent),
-                        foregroundColor: MaterialStateProperty.all(Colors.white),
+                        backgroundColor:
+                        MaterialStateProperty.all(Colors.blueAccent),
+                        foregroundColor:
+                        MaterialStateProperty.all(Colors.white),
                       ),
                       child: const Text('Enregistrer'),
                     ),
