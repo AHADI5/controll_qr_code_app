@@ -17,8 +17,8 @@ class MainApp extends StatelessWidget {
       title: "Control App",
       initialRoute: "/",
       routes: {
-        "/": (context) => const Home(),
-        "/verificationResult": (context) => const VerificationResultPage(isInOrder: false),
+        "/": (context) => const Home()
+
       },
     );
   }

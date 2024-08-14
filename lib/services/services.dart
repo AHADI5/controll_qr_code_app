@@ -10,34 +10,54 @@ class DatabaseService {
   factory DatabaseService() => _databaseService;
   DatabaseService._internal();
   static Database? _database;
+
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await initDatabase();
     return _database!;
   }
 
-  //Database initialisation
+  // Database initialization
   Future<Database> initDatabase() async {
     final getDirectory = await getApplicationDocumentsDirectory();
     String path = '${getDirectory.path}/students.db';
     log(path);
-    return await openDatabase(path, onCreate: _onCreate, version: 1);
+    return await openDatabase(
+      path,
+      version: 2, // Increment this if you make schema changes
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
   }
 
+  // Create tables when the database is first created
   void _onCreate(Database db, int version) async {
     await db.execute(
       'CREATE TABLE Student(mat INT PRIMARY KEY, name TEXT, payed_amount DOUBLE)',
     );
-    // Create the VerificationAmount table with an id as the primary key
     await db.execute(
       'CREATE TABLE IF NOT EXISTS VerificationAmount('
-          'id INTEGER PRIMARY KEY AUTOINCREMENT, ' // Primary key
+          'id INTEGER PRIMARY KEY AUTOINCREMENT, '
           'amount DOUBLE)',
     );
-
-
-
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS tapi('
+          'id INTEGER PRIMARY KEY AUTOINCREMENT, '
+          'url TEXT)',
+    );
     log('TABLES CREATED');
+  }
+
+  // Handle database upgrades, e.g., adding new tables
+  void _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+        'CREATE TABLE IF NOT EXISTS tapi('
+            'id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'url TEXT)',
+      );
+      log('tapi TABLE CREATED ON UPGRADE');
+    }
   }
 
   // Retrieve all students stored locally
@@ -98,6 +118,23 @@ class DatabaseService {
     }
   }
 
+  Future<String> getApi() async {
+    final db = await _databaseService.database;
+
+    // Execute the query to get the amount to verify
+    var data = await db.rawQuery(
+      'SELECT url FROM tapi WHERE id = ?',
+      [1], // Assuming you are still using the first row (id = 1)
+    );
+
+    if (data.isNotEmpty) {
+      print("the actual api is   ${Api.fromJson(data.first).api}");
+      return Api.fromJson(data.first).api;
+    } else {
+      throw Exception('No api found');
+    }
+  }
+
 
 
 
@@ -149,6 +186,32 @@ class DatabaseService {
         {'amount': amount},
       );
       print("no amount found , new one has been inserted ") ;
+    }
+  }
+
+  Future<void> setApi(String api) async {
+    final db = await _databaseService.database;
+
+    //get the actual value
+    var data = await db.rawQuery(
+      'SELECT url FROM tapi WHERE id = ?',
+      [1], // Assuming you are still using the first row (id = 1)
+    );
+
+    if (data.isNotEmpty) {
+      await db.update(
+        'tapi',
+        {'url': api},
+        where: 'id = ?', // Use the id field
+        whereArgs: [1], // Assuming there's only one row
+      );
+      print("api exists and has been  updated ") ;
+    } else {
+      await db.insert(
+        'tapi',
+        {'url': api},
+      );
+      print("no api found , new one has been inserted ") ;
     }
   }
 

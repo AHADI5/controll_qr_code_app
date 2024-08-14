@@ -76,4 +76,76 @@ class Settings {
       },
     );
   }
+
+  static Future<void> showPopupApi(
+      BuildContext context, Function(String) onAmountSaved) async {
+    TextEditingController _textController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Text(
+                  'Api ',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                TextField(
+                  controller: _textController,
+                  decoration: const InputDecoration(
+                    hintText: 'http://',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.url,
+                ),
+                const SizedBox(height: 16.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Annuler'),
+                    ),
+                    const SizedBox(width: 8.0),
+                    ElevatedButton(
+                      onPressed: () async {
+                        String enteredText = _textController.text;
+                        final databaseService = DatabaseService();
+                        String api = enteredText;
+                        await databaseService.setApi(api);
+
+                        onAmountSaved(api);
+
+                        Navigator.of(context).pop();
+                      },
+                      style: ButtonStyle(
+                        backgroundColor:
+                        MaterialStateProperty.all(Colors.blueAccent),
+                        foregroundColor:
+                        MaterialStateProperty.all(Colors.white),
+                      ),
+                      child: const Text('Enregistrer'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

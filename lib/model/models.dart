@@ -31,9 +31,17 @@ class VerificationAmount {
   factory VerificationAmount.fromJson(Map<String, dynamic> json) {
     return VerificationAmount(
         amount: json["amount"],
-
     );
   }
+}
 
+class Api {
+  late String api;
 
+  Api({required this.api}) ;
+  factory Api.fromJson(Map<String, dynamic> json) {
+    return Api(
+      api: json["api"],
+    );
+  }
 }

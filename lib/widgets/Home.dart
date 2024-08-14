@@ -7,6 +7,8 @@ import 'package:v1/services/services.dart';
 import 'package:v1/widgets/Settings.dart';
 import 'package:v1/services/synchronisation.dart';
 import 'package:v1/widgets/Result.dart';
+import 'package:v1/widgets/error.dart';
+import '../model/models.dart';
 import 'Verification.dart';
 
 class Home extends StatefulWidget {
@@ -23,8 +25,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   bool _isScanning = false;
   bool _isVerifying = false;
   bool _isAmountSet = false;
+  bool _isApiSet = false ;
   String _amountMessage = '';
   double _verificationAmount = 0.0; // Define verification amount
+  String _api = '' ;
   qr_code_scanner.QRViewController? controller;
   mobile_scanner.Barcode? result;
 
@@ -32,10 +36,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<Offset> _animation;
 
+
   @override
   void initState() {
     super.initState();
     _loadVerificationAmount();
+    _loadApi();
 
     // Initialize animation controller
     _animationController = AnimationController(
@@ -85,6 +91,21 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     }
   }
 
+  Future<void> _loadApi() async {
+    try {
+      _api = await _databaseService.getApi();
+      setState(() {
+        _isApiSet = true;
+        _amountMessage = '\$${_verificationAmount.toStringAsFixed(2)}';
+      });
+    } catch (e) {
+      setState(() {
+        _isApiSet= false;
+        _amountMessage = 'Pas de montant de vérification';
+      });
+    }
+  }
+
   Future<void> _startSynchronization() async {
     setState(() {
       _isSynchronizing = true;
@@ -94,7 +115,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     try {
       SyncService syncService = SyncService();
       await syncService
-          .synchronizeWithServer('http://192.168.43.178:8080/api/v1/students/');
+          .synchronizeWithServer(_api);
 
       setState(() {
         _isSynchronizing = false;
@@ -113,24 +134,32 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title:  Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              "ULPGL",
-              style: TextStyle(
-                  letterSpacing: 4.5,
-                  color: Colors.lightBlue
+            const Center(
+              child: Text(
+                "ULPGL-FINCHECK-TOOL",
+                style: TextStyle(
+                    letterSpacing: 4.5,
+                    color: Colors.lightBlue ,
+                  fontSize: 10
+                ),
               ),
             ),
-            Row(
-              children: [
-                Text(
-                  ' \$ ${_verificationAmount.toString()}',
-                  style: const TextStyle(fontSize: 20.0),
-                ),
-              ],
+
+            IconButton(
+              onPressed: () async {
+                await Settings.showPopupApi(context, (api) {
+                  setState(() {
+                    _api = api;
+                  });
+                });
+                _loadApi(); // Reload amount after registering new one
+              },
+              icon: const Icon(Icons.settings),
             ),
+
           ],
         ),
       ),
@@ -143,60 +172,65 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          spreadRadius: 3,
-                          blurRadius: 3,
-                          offset: Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    margin: const EdgeInsets.all(15),
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    height: MediaQuery.of(context).size.height * 0.5,
-                    child: Stack(
-                      children: [
-                        _isScanning
-                            ? qr_code_scanner.QRView(
-                          onPermissionSet: (ctrl, p) =>
-                              _onPermissionSet(context, ctrl, p),
-                          key: qrkey,
-                          onQRViewCreated: _onQRViewCreated,
-                        )
-                            : Center(child: QrImageView.new(data: '',)),
-                        if (_isScanning)
-                          Positioned.fill(
-                            child: SlideTransition(
-                              position: _animation,
-                              child: Align(
-                                alignment: Alignment.topCenter,
-                                child: Container(
-                                  margin: const EdgeInsets.only(top: 30.0),
-                                  height: 4.0,
-                                  width: MediaQuery.of(context).size.width * 0.7,
-                                  color: Colors.red,
+                  child: Column(
+                    children: [
+                      Text(_api),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              spreadRadius: 3,
+                              blurRadius: 3,
+                              offset: Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        margin: const EdgeInsets.all(15),
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        height: MediaQuery.of(context).size.height * 0.3,
+                        child: Stack(
+                          children: [
+                            _isScanning
+                                ? qr_code_scanner.QRView(
+                              onPermissionSet: (ctrl, p) =>
+                                  _onPermissionSet(context, ctrl, p),
+                              key: qrkey,
+                              onQRViewCreated: _onQRViewCreated,
+                            )
+                                : Center(child: QrImageView.new(data: '',)),
+                            if (_isScanning)
+                              Positioned.fill(
+                                child: SlideTransition(
+                                  position: _animation,
+                                  child: Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Container(
+                                      margin: const EdgeInsets.only(top: 30.0),
+                                      height: 4.0,
+                                      width: MediaQuery.of(context).size.width * 0.7,
+                                      color: Colors.red,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        if (_isVerifying)
-                          const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(height: 10),
-                                Text('Vérification en cours...'),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
+                            if (_isVerifying)
+                              const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(),
+                                    SizedBox(height: 10),
+                                    Text('Vérification en cours...'),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -234,7 +268,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                       });
                       _loadVerificationAmount(); // Reload amount after registering new one
                     },
-                    icon: const Icon(Icons.settings),
+                    icon: const Icon(Icons.currency_exchange_rounded),
                   ),
                 ],
               ),
@@ -244,9 +278,21 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 const SizedBox(height: 10),
                 Text(_syncStatusMessage),
               ],
-              const SizedBox(height: 80),
-              const Text("ULPGL 2024"),
               const SizedBox(height: 20),
+              Column(
+                children: [
+                  const Text("Montant requis :" , style: TextStyle(fontSize: 20),),
+                  Text(
+                    ' \$ ${_verificationAmount.toString()}',
+                    style: const TextStyle(fontSize: 18.0  , fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 30),
+                  const Text("© ULPGL 2024. Tous droits réservés." , style: const TextStyle(fontSize: 12.0),),
+                ],
+
+              ),
+
+              const SizedBox(height: 15),
             ],
           ),
         ),
@@ -286,17 +332,49 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   }
 
   Future<void> navigateToNextScreen(String qrData) async {
-    final int studentID =
-    int.parse(qrData); // Convert scanned result to studentID
-    final Verification verification = Verification();
-    final bool isInOrder = await verification.checkStudent(studentID);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VerificationResultPage(
-          isInOrder: isInOrder,
+    final int studentID = int.parse(qrData); // Convert scanned result to studentID
+
+    // getting the student for result issues
+    try {
+      final Student? student = await _databaseService.getStudentByID(studentID);
+
+      if (student == null) {
+        // Navigate to the ErrorPage if the student is not found
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ErrorPage(),
+          ),
+        );
+        return; // Exit the function to prevent further execution
+      }
+
+      final Verification verification = Verification();
+      final bool isInOrder = await verification.checkStudent(studentID);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VerificationResultPage(
+            isInOrder: isInOrder,
+            amount: student.payedAmount,
+            name: student.name,
+            requiredAmount: _verificationAmount,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      // Handle any errors by logging them and returning false
+      print("Error retrieving student or amount: $e");
+
+      // Optionally navigate to an error page or handle the error in another way
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ErrorPage(),
+        ),
+      );
+    }
   }
+
 }
