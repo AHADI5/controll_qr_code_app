@@ -3,9 +3,9 @@ import 'package:v1/widgets/Home.dart'; // Import the Home widget for rescanning
 
 class VerificationResultPage extends StatelessWidget {
   final bool isInOrder;
-  final double amount;
+  final int amount;
   final String name;
-  final double requiredAmount  ;
+  final int requiredAmount  ;
 
   const VerificationResultPage(
       {super.key,

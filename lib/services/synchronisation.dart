@@ -4,7 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:v1/model/models.dart'; // Ensure this path is correct
 import 'package:v1/services/services.dart'; // Ensure this path is correct
 
+
+
 class SyncService {
+
   // Synchronize local database with remote server
   Future<void> synchronizeWithServer(String endpoint) async {
     try {
@@ -13,6 +16,9 @@ class SyncService {
       if (response.statusCode == 200) {
         // Parse the JSON response
         final List<dynamic> data = json.decode(response.body);
+        log('Data Fetched: ${response.body}');
+
+
 
         // Convert JSON data to List<Student>
         List<Student> students = data

@@ -6,7 +6,7 @@ import '../services/services.dart';
 class Settings {
   // Function to show the popup dialog
   static Future<void> showPopup(
-      BuildContext context, Function(double) onAmountSaved) async {
+      BuildContext context, Function(int) onAmountSaved) async {
     TextEditingController _textController = TextEditingController();
 
     await showDialog<void>(
@@ -52,7 +52,7 @@ class Settings {
                       onPressed: () async {
                         String enteredText = _textController.text;
                         final databaseService = DatabaseService();
-                        double newAmount = double.parse(enteredText);
+                        int newAmount = int.parse(enteredText);
                         await databaseService.setAmount(newAmount);
 
                         onAmountSaved(newAmount);

@@ -25,10 +25,10 @@ class Verification {
        }
 
        // Get the required verification amount from the database
-       final double verificationAmount = await _databaseService.getAmount();
+       final int verificationAmount = await _databaseService.getAmount();
 
        // Check if the student's paid amount matches the required verification amount
-       return student.payedAmount >= verificationAmount;
+       return  (student.payedAmount ?? 0) >= (verificationAmount ?? 0);
      } catch (e) {
        // Handle any errors by logging them and returning false
        print("Error retrieving student or amount: $e");

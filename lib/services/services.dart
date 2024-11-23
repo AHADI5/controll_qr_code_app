@@ -33,12 +33,12 @@ class DatabaseService {
   // Create tables when the database is first created
   void _onCreate(Database db, int version) async {
     await db.execute(
-      'CREATE TABLE Student(mat INT PRIMARY KEY, name TEXT, payed_amount DOUBLE)',
+      'CREATE TABLE Student(MAT TEXT PRIMARY KEY, NAME TEXT NULL, AMOUNTPAYED INTEGER)',
     );
     await db.execute(
       'CREATE TABLE IF NOT EXISTS VerificationAmount('
           'id INTEGER PRIMARY KEY AUTOINCREMENT, '
-          'amount DOUBLE)',
+          'amount INTEGER)',
     );
     await db.execute(
       'CREATE TABLE IF NOT EXISTS tapi('
@@ -74,7 +74,7 @@ class DatabaseService {
   Future<void> editStudent(Student student) async {
     final db = await _databaseService.database;
     var data = await db.rawUpdate(
-        'UPDATE Student SET name=?,payed_amount=? WHERE mat=?',
+        'UPDATE Student SET NAME=?,AMOUNTPAYED=? WHERE MAT=?',
         [student.name, student.payedAmount,  student.studentID]);
     log('updated $data');
   }
@@ -85,9 +85,11 @@ class DatabaseService {
 
     // Execute the query to find the student by ID
     var data = await db.rawQuery(
-      'SELECT * FROM Student WHERE mat = ?',
+      'SELECT * FROM Student WHERE MAT = ?',
       [studentID],
     );
+
+    log(data.toString()) ;
 
     // Check if any data is returned
     if (data.isNotEmpty) {
@@ -96,12 +98,12 @@ class DatabaseService {
       return Student.fromJson(data.first);
     } else {
       // Return null if no student was found
-      print("no student found with matricule $studentID");
+      print("no student found with MATricule $studentID");
       return null;
     }
   }
 
-  Future<double> getAmount() async {
+  Future<int> getAmount() async {
     final db = await _databaseService.database;
 
     // Execute the query to get the amount to verify
@@ -115,6 +117,22 @@ class DatabaseService {
       return VerificationAmount.fromJson(data.first).amount;
     } else {
       throw Exception('No amount found');
+    }
+  }
+
+  Future<int> getStudentSynced() async {
+    final db = await _databaseService.database;
+
+    // Execute the query to get the amount to verify
+    var data = await db.rawQuery(
+      'SELECT COUNT(*) as stNumber FROM Student'
+    );
+
+    if (data.isNotEmpty) {
+      print("the actual student number is   ${StudentNumber.fromJson(data.first).stNumber}");
+      return StudentNumber.fromJson(data.first).stNumber;
+    } else {
+      throw Exception('No student found');
     }
   }
 
@@ -150,7 +168,7 @@ class DatabaseService {
       // Insert only new data
       if (!localList.any((localStudent) => localStudent.studentID == student.studentID)) {
         var data = await db.rawInsert(
-          'INSERT INTO Student(mat, name, payed_amount) VALUES(?, ?, ?)', // Corrected the number of placeholders
+          'INSERT INTO Student(MAT,NAME, AMOUNTPAYED) VALUES(?, ?, ?)', // Corrected the number of placeholders
           [student.studentID, student.name, student.payedAmount],
         ) ;
         log('inserted $data');
@@ -163,7 +181,7 @@ class DatabaseService {
 
   // this method insert a new amount , or update it if it already exists
 
-  Future<void> setAmount(double amount) async {
+  Future<void> setAmount(int amount) async {
     final db = await _databaseService.database;
 
     //get the actual value

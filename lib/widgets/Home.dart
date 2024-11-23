@@ -27,7 +27,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   bool _isAmountSet = false;
   bool _isApiSet = false ;
   String _amountMessage = '';
-  double _verificationAmount = 0.0; // Define verification amount
+  int _verificationAmount = 0; // Define verification amount
+  int _student_sync_number = 0;
   String _api = '' ;
   qr_code_scanner.QRViewController? controller;
   mobile_scanner.Barcode? result;
@@ -83,6 +84,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         _isAmountSet = true;
         _amountMessage = '\$${_verificationAmount.toStringAsFixed(2)}';
       });
+      _student_sync_number = await _databaseService.getStudentSynced();
+
     } catch (e) {
       setState(() {
         _isAmountSet = false;
@@ -96,12 +99,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       _api = await _databaseService.getApi();
       setState(() {
         _isApiSet = true;
-        _amountMessage = '\$${_verificationAmount.toStringAsFixed(2)}';
+        _amountMessage = 'Api loaded';
       });
     } catch (e) {
       setState(() {
         _isApiSet= false;
-        _amountMessage = 'Pas de montant de vérification';
+        _amountMessage = 'No API set' ;
       });
     }
   }
@@ -148,6 +151,40 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               ),
             ),
 
+            Column(
+              children: [
+                _api == ''
+                    ? const Row(
+                      children: [
+                        Text('API',
+                                          style: TextStyle(
+                          letterSpacing: 4.5,
+                          color: Colors.lightBlue ,
+                          fontSize: 10
+                                          ),
+
+                                        ),
+
+                        Icon(Icons.close, color: Colors.red), // Add an icon here
+
+                      ],
+                    )
+                    : const Row(
+                  children: [
+                    Text('API',
+                      style: TextStyle(
+                          letterSpacing: 4.5,
+                          color: Colors.lightBlue ,
+                          fontSize: 10
+                      ),
+
+                    ),
+                    Icon(Icons.check, color: Colors.green), // Add an icon here
+                  ],
+                ),
+              ],
+            ),
+
             IconButton(
               onPressed: () async {
                 await Settings.showPopupApi(context, (api) {
@@ -174,7 +211,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      Text(_api),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white10,
@@ -286,9 +322,20 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                     ' \$ ${_verificationAmount.toString()}',
                     style: const TextStyle(fontSize: 18.0  , fontWeight: FontWeight.bold),
                   ),
+
+                  Text("_______________________________" , style: TextStyle(fontSize: 18 ,  fontWeight: FontWeight.bold)),
+
+                  //Student synchronized number
+                  const Text("Etudiant Synchronisés :" , style: TextStyle(fontSize: 20),),
+                  Text(
+                    '${_student_sync_number.toString()}',
+                    style: const TextStyle(fontSize: 18.0  , fontWeight: FontWeight.bold),
+                  ),
+
                   const SizedBox(height: 30),
                   const Text("© ULPGL 2024. Tous droits réservés." , style: const TextStyle(fontSize: 12.0),),
                 ],
+
 
               ),
 

@@ -1,15 +1,15 @@
 class Student  {
-  late int studentID ;
+  late String studentID ;
   late String name ;
-  late double payedAmount  ;
+  late int payedAmount  ;
 
   Student({required this.studentID , required this.name , required this.payedAmount});
 
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
-      studentID: json["mat"],
-      name: json["name"],
-      payedAmount: json["payed_amount"]
+      studentID: json["MAT"] ,
+      name:  json["NAME"] ?? "NAN",
+      payedAmount: json["AMOUNTPAYED"]
     );
   }
 
@@ -25,12 +25,23 @@ class Student  {
 }
 
 class VerificationAmount {
-  late double amount;
+  late int amount;
 
   VerificationAmount({required this.amount}) ;
   factory VerificationAmount.fromJson(Map<String, dynamic> json) {
     return VerificationAmount(
         amount: json["amount"],
+    );
+  }
+}
+
+class StudentNumber {
+  late int stNumber;
+
+  StudentNumber({required this.stNumber}) ;
+  factory StudentNumber.fromJson(Map<String, dynamic> json) {
+    return StudentNumber(
+      stNumber: json["stNumber"],
     );
   }
 }
